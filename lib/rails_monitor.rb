@@ -21,6 +21,11 @@ module RailsMonitor
       end
     end
 
+    def render_text_plain(text)
+      headers['Content-type'] = 'text/plain'
+      render :text => text
+    end
+
     module ClassMethods
       def status_tab(anchor, statuses_to_show = [])
         self.statuses[anchor] = statuses_to_show
@@ -33,25 +38,28 @@ module RailsMonitor
           result = yield
 
           if result
-            render :text => "OK: #{result}"
+            render_text_plain "OK: #{result}"
           else
-            render :text => "ERROR: #{result}"
+            render_text_plain "ERROR: #{result}"
           end
         end
       end
     
-      def numeric_status(name, warn_threshold = nil, error_threshold = nil)
+      def numeric_status(name, default_warn_threshold = nil, default_error_threshold = nil)
         raise ArgumentError('No block given') unless block_given?
     
         define_method(name) do
           result = yield.to_i
 
-          if error_threshold && result >= error_threshold
-            render :text => "ERROR: #{result}"
-          elsif warn_threshold && result >= warn_threshold
-            render :text => "WARN: #{result}"
+          warn_threshold = default_warn_threshold || params[:warn_threshold]
+          error_threshold = default_error_threshold || params[:error_threshold]
+
+          if error_threshold && result >= error_threshold.to_i
+            render_text_plain "ERROR: #{result}"
+          elsif warn_threshold && result >= warn_threshold.to_i
+            render_text_plain "WARN: #{result}"
           else
-            render :text => "OK: #{result}"
+            render_text_plain "OK: #{result}"
           end
         end
       end
