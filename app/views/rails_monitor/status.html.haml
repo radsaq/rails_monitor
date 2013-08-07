@@ -1,0 +1,38 @@
+.container
+  .row
+    #status_container.settings.span12
+      .row
+        #status_list.span10.offset1.content
+          %h2 Site Status
+
+          %ul.nav.nav-tabs{'data-tabs' => 'tabs'}
+            - first = true
+            - @statuses.each_key do |category|
+              %li{:class => (first ? 'active' : nil)}
+                = link_to(category.to_s.humanize, {:anchor => category}, {'data-toggle' => 'tab'})
+                - first = false
+
+          .tab-content
+            - first = true
+            - @statuses.each do |category, names|
+              .tab-pane{:id => category, :class => (first ? 'active' : nil)}
+                - names.each do |name|
+                  .status_wrapper
+                    = name.to_s.humanize
+                    .status{:id => "status_#{name}", 'data-name' => name}
+                      %pre
+                - first = false
+
+:javascript
+  var updateStatuses = function() {
+    jQuery.each($('.status'), function(ii, status) {
+      var name = $(status).data('name');
+      var elem = $(status).find('pre');
+      elem.html("Loading...");
+      jQuery.ajax(document.location.pathname + "/" + name, {timeout: 10000}).done(function(text) {
+        elem.html(text);
+      });
+    });
+    setTimeout(updateStatuses, 10000);
+  };
+  updateStatuses();
